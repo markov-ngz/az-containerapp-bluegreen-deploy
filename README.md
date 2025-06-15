@@ -15,7 +15,7 @@ Automate your blue-green deployments for Azure Container Apps from your Github A
 2. Use the action
 ```
 - name: Deploy to Azure Container App 
-  uses: markov-ngz/containerapp-bluegreen-deploy@v1.0.0.0 # choose the right deployment tag
+  uses: markov-ngz/containerapp-bluegreen-deploy@v1.0.0 # choose the right deployment tag
   with:
       resource_group_name: <resource groupe name>
       container_app_name: <name of the container app>
