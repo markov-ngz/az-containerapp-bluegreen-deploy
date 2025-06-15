@@ -1,7 +1,8 @@
 name: 'containerapp-bluegreen-deploy'
 description: 'Automates blue-green deployments for Azure Container Apps'
-icon: 'box'
-color: 'green'
+branding:
+  icon : 'box'
+  color : 'green'
 
 
 inputs:
