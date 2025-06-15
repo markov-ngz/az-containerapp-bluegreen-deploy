@@ -1,4 +1,4 @@
-name: 'containerapp-bluegreen-deploy'
+name: 'az-containerapp-bluegreen-deploy'
 description: 'Automates blue-green deployments for Azure Container Apps'
 branding:
   icon : 'box'
