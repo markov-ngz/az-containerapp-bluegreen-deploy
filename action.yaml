@@ -1,0 +1,91 @@
+name: 'containerapp-bluegreen-deploy'
+description: 'Automates blue-green deployments for Azure Container Apps, enabling seamless and safe production updates.'
+inputs:
+  resource_group_name:
+    description: 'Azure resource group'
+    required: true
+    type: string
+  container_app_name:
+    description: 'Azure application name'
+    required: true
+    type: string
+  image_full_name:
+    description: 'Full image name to deploy, it could be like <registry_name>.azurecr.io/<image_name>:<image_tag>'
+    required: true
+    type: string
+  environment_variables:
+    description: |
+      Add or update environment variable(s) in container. 
+      Existing environment variables are not modified. 
+      Space-separated values in 'key=value' format. 
+      If stored as a secret, value must start with 'secretref:' followed by the secret name.
+      See : https://learn.microsoft.com/en-us/cli/azure/containerapp?view=azure-cli-latest#az-containerapp-update
+    required: false
+    type: string
+    
+runs:
+  using: "composite"      
+  steps:   
+      - name: Get short SHA (12 characters)
+        id: get_short_sha_12
+        run: |
+          echo "short_sha=$(echo '${{ github.sha }}' | cut -c1-12)" >> $GITHUB_OUTPUT
+        shell: bash
+        
+      - name: Get current label in production
+        shell: bash
+        id: get_current_label
+        run: echo "current_label=$(az containerapp ingress traffic show --resource-group  ${{ inputs.resource_group_name }} --name ${{ inputs.container_app_name }} --query '[?weight==`100`].label' -o tsv)" >> $GITHUB_OUTPUT
+
+
+      - name: Printing current label 
+        run: echo "Current label value ${{ steps.get_current_label.outputs.current_label }}"
+        shell: bash
+        
+      - name: Set new label value
+        shell: bash
+        id: set_new_label
+        run: |
+          case "${{ steps.get_current_label.outputs.current_label }}" in
+              "green")
+                  echo "new_label=blue" >> $GITHUB_OUTPUT
+                  ;;
+              "blue")
+                  echo "new_label=green" >> $GITHUB_OUTPUT
+                  ;;
+              *) # Default case for anything not "green" or "blue"
+                  echo "new_label=green" >> $GITHUB_OUTPUT
+                  ;;
+          esac
+          
+      - name: Printing current label 
+        run: echo "New label value ${{ steps.set_new_label.outputs.new_label }}"
+        shell: bash
+        
+
+      - name: Create new revision
+        shell: bash
+        run: |
+          az containerapp update --name ${{inputs.container_app_name}} \
+            --resource-group ${{inputs.resource_group_name}} \
+            --image ${{ inputs.image_full_name }} \
+            --revision-suffix ${{ steps.get_short_sha_12.outputs.short_sha }}
+            --set-env-vars ${{ inputs.environment_variables }}
+
+      - name: Add the label to be deployed
+        shell: bash
+        run: |
+          az containerapp revision label add \
+            --name ${{inputs.container_app_name}} \
+            --resource-group ${{inputs.resource_group_name}} \
+            --label ${{ steps.set_new_label.outputs.new_label }} \
+            --revision ${{inputs.container_app_name}}--${{ steps.get_short_sha_12.outputs.short_sha }} \
+            --no-prompt --yes
+
+      - name: Direct traffic to new revision
+        shell: bash
+        run: |
+          az containerapp ingress traffic set \
+            --name ${{inputs.container_app_name}} \
+            --resource-group ${{inputs.resource_group_name}} \
+            --label-weight ${{ steps.set_new_label.outputs.new_label }}=100 ${{ steps.get_current_label.outputs.current_label }}=0
