@@ -1,5 +1,9 @@
 name: 'containerapp-bluegreen-deploy'
-description: 'Automates blue-green deployments for Azure Container Apps, enabling seamless and safe production updates.'
+description: 'Automates blue-green deployments for Azure Container Apps'
+icon: 'box'
+color: 'green'
+
+
 inputs:
   resource_group_name:
     description: 'Azure resource group'
