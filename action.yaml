@@ -90,7 +90,15 @@ runs:
       - name: Direct traffic to new revision
         shell: bash
         run: |
-          az containerapp ingress traffic set \
-            --name ${{inputs.container_app_name}} \
-            --resource-group ${{inputs.resource_group_name}} \
-            --label-weight ${{ steps.set_new_label.outputs.new_label }}=100 ${{ steps.get_current_label.outputs.current_label }}=0
+          if [[ -n "${{ steps.get_current_label.outputs.current_label }}" ]]; then
+            az containerapp ingress traffic set \
+              --name ${{inputs.container_app_name}} \
+              --resource-group ${{inputs.resource_group_name}} \
+              --label-weight ${{ steps.set_new_label.outputs.new_label }}=100 ${{ steps.get_current_label.outputs.current_label }}=0
+          else
+            az containerapp ingress traffic set \
+              --name ${{inputs.container_app_name}} \
+              --resource-group ${{inputs.resource_group_name}} \
+              --label-weight ${{ steps.set_new_label.outputs.new_label }}=100
+          fi
+
