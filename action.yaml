@@ -74,7 +74,7 @@ runs:
           az containerapp update --name ${{inputs.container_app_name}} \
             --resource-group ${{inputs.resource_group_name}} \
             --image ${{ inputs.image_full_name }} \
-            --revision-suffix ${{ steps.get_short_sha_12.outputs.short_sha }}
+            --revision-suffix ${{ steps.get_short_sha_12.outputs.short_sha }} \
             --set-env-vars ${{ inputs.environment_variables }}
 
       - name: Add the label to be deployed
